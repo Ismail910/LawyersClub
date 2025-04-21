@@ -86,13 +86,28 @@
         text-align: center;
         width: 150px; /* طول الخط تحت كل توقيع */
     }
-    @media print {
+    .association-name {
+    font-size: 36px;
+    font-weight: bold;
+    color: #34495e;
+    text-align: left;
+    white-space: nowrap; /* ❗ Prevents text from wrapping */
+    overflow: hidden;    /* Optional: Prevents overflow issues */
+    text-overflow: ellipsis; /* Optional: Ellipsis if it's too long */
+}
+
+        @media print {
+            .association-name {
+        font-size: 20px;
+        font-weight: bold;
+        white-space: nowrap;
+        text-align: left;
+        direction: rtl;
+    }
         .signature-line {
             margin-top: 30px;
         }
-    }
 
-        @media print {
             body {
                 background-color: #fff;
                 padding: 0;
@@ -111,6 +126,7 @@
         }
     </style>
 </head>
+
 <body>
     <div class="container">
         <button class="btn-print" onclick="printReceipt()">طباعة أمر الصرف</button>
@@ -119,9 +135,10 @@
         <div id="receipt-container" class="receipt-container">
             <div style="display: flex; align-items: center; justify-content: space-between;">
                 <!-- رابطة الحقوقين باسيوط -->
-                <div style="font-size: 36px; font-weight: bold; color: #34495e; flex: 1; text-align: left;">
+                <div class="association-name">
                     رابطة الحقوقين باسيوط
                 </div>
+
 
                 <!-- أمر صرف شيكات -->
                 <div style="flex: 3; text-align: center;">
@@ -330,9 +347,34 @@
     }
 }
 
-        function printReceipt() {
-            window.print();
-        }
+async function printReceipt() {
+    const invoiceId = window.location.pathname.split('/').pop();
+    await incrementDisbursementOrder(invoiceId);
+    window.print();
+}
+
+
+async function incrementDisbursementOrder(invoiceId) {
+    try {
+        const csrfToken = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
+        const response = await fetch('/increment-disbursement-order-sequence', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRF-TOKEN': csrfToken,
+            },
+            body: JSON.stringify({ invoice_id: invoiceId })
+        });
+
+        if (!response.ok) throw new Error('خطأ في تحديث رقم أمر الصرف');
+    } catch (error) {
+        console.error('Error:', error);
+        alert('فشل تحديث الرقم التسلسلي لأمر الصرف.');
+    }
+}
+
+
+
 
         // تحميل البيانات عند فتح الصفحة
         document.addEventListener('DOMContentLoaded', async () => {

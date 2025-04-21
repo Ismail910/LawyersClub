@@ -113,7 +113,6 @@ class InvoiceController extends Controller
         $counter = Counter::first();
         $disbursement_order_sequence = $counter ? $counter->disbursement_order_sequence : 0;
 
-        // ✅ إرجاع JSON عند طلب `ajax=true` أو `expectsJson()`
         if ($request->expectsJson() || $request->ajax()) {
             $categoryName = $invoice->category ? $invoice->category->name : "غير محدد";
             $parentCategoryName = $invoice->category && $invoice->category->parent
@@ -133,8 +132,7 @@ class InvoiceController extends Controller
             ]);
         }
 
-        // ✅ عرض الفاتورة في صفحة `show.blade.php` عند الطلب العادي
-        // نمرر بيانات إضافية للعرض
+
         $invoice->disbursement_order_sequence = $disbursement_order_sequence;
 
         if ($invoice->category && $invoice->category->parent) {

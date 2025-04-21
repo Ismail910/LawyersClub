@@ -11,10 +11,13 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('sequences', function (Blueprint $table) {
+        Schema::create('member_prints', function (Blueprint $table) {
             $table->id();
-            $table->morphs('sequencable');
-            $table->bigInteger('current_number')->default(0);  
+            $table->string('serial_number')->unique();
+            $table->timestamp('printed_at')->useCurrent();
+            $table->string('name')->nullable();
+            $table->text('notes')->nullable();
+            $table->decimal('amount', 10, 2)->default(0);
             $table->timestamps();
         });
     }
@@ -24,6 +27,6 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::dropIfExists('sequences');
+        Schema::dropIfExists('member_prints');
     }
 };

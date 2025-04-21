@@ -111,7 +111,25 @@
             font-size: 22px;
             padding: 5px;
         }
+
+       .association-name {
+    font-size: 36px;
+    font-weight: bold;
+    color: #34495e;
+    text-align: left;
+    white-space: nowrap; /* ❗ Prevents text from wrapping */
+    overflow: hidden;    /* Optional: Prevents overflow issues */
+    text-overflow: ellipsis; /* Optional: Ellipsis if it's too long */
+}
+
         @media print {
+            .association-name {
+        font-size: 20px;
+        font-weight: bold;
+        white-space: nowrap;
+        text-align: left;
+        direction: rtl;
+    }
     body {
         background-color: #fff;
         font-size: 16px;
@@ -267,9 +285,10 @@
                     <!-- ✅ اللوجو -->
                     <div style="display: flex; justify-content: center; align-items: center;">
                         <!-- Left Side: Logo -->
-                        <div style="flex: 1; text-align: left; font-size: 26px;font-weight: bold; color: #34495e;">
-        رابطة الحقوقين باسيوط
-    </div>
+                       <div class="association-name">
+    رابطة الحقوقين باسيوط
+</div>
+
                         <div style="flex: 3; text-align: center; font-size: 26px; font-weight: bold; color: #34495e;">
                             <div>أمر التوريد </div>
                             <div> ${toArabicDigits(budgetData.supply_order_sequence)} / no </div>
@@ -346,25 +365,29 @@
             }
         }
 
-        // Function to increment the supply_order_sequence counter
         async function incrementSupplyOrderSequence() {
-            try {
-                const csrfToken = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
-                const response = await fetch('/increment-supply-order-sequence', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'X-CSRF-TOKEN': csrfToken,
-                    },
-                });
-                if (!response.ok) {
-                    throw new Error('Failed to increment supply order sequence');
-                }
-            } catch (error) {
-                console.error("Error:", error);
-                throw error;
-            }
+    try {
+        const csrfToken = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
+        const budgetId = window.location.pathname.split('/').pop();
+
+        const response = await fetch('/increment-supply-order-sequence', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRF-TOKEN': csrfToken,
+            },
+            body: JSON.stringify({ budget_id: budgetId })
+        });
+
+        if (!response.ok) {
+            throw new Error('Failed to increment supply order sequence');
         }
+    } catch (error) {
+        console.error("Error:", error);
+        throw error;
+    }
+}
+
 
         // 🟢 تحميل البيانات عند تشغيل الصفحة
         document.addEventListener('DOMContentLoaded', () => {

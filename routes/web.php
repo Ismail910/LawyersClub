@@ -41,7 +41,10 @@ Route::get('/', [App\Http\Controllers\HomeController::class, 'root'])->name('roo
 
 Route::post('/increment-member-subscription-sequence', [CounterController::class, 'incrementMemberSubscriptionSequence']);
 Route::post('/increment-disbursement-order-sequence', [CounterController::class, 'incrementDisbursementOrderSequence']);
+
+
 Route::post('/increment-supply-order-sequence', [CounterController::class, 'incrementSupplyOrderSequence']);
+
 
 
 Route::middleware(['auth:admin,accountant,hr'])->group(function () {

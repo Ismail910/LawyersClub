@@ -69,31 +69,43 @@
             </div>
         </div>
 
-        <!-- Organized Table -->
-        <div class="table-responsive mt-4">
-            <table class="table table-bordered text-center">
-                <thead class="table-dark">
-                    <tr>
-                        <th style="width: 33%">الإيرادات</th>
-                        <th style="width: 33%">المصروفات</th>
-                        <th style="width: 33%">الرصيد</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    <tr style="height: 100px;">
-                        <td class="align-middle text-success fs-3 fw-bold">
-                            {{ number_format($totalRevenues, 2) }} ج.م
-                        </td>
-                        <td class="align-middle text-danger fs-3 fw-bold">
-                            {{ number_format($totalExpenses, 2) }} ج.م
-                        </td>
-                        <td class="align-middle text-primary fs-3 fw-bold">
-                            {{ number_format($difference, 2) }} ج.م
-                        </td>
-                    </tr>
-                </tbody>
-            </table>
-        </div>
+   <!-- Print-Only Section -->
+<div id="print-section" class="d-none d-print-block">
+    <div class="text-center mb-4">
+        <img src="{{ URL::asset('assets/images/logo.jpeg') }}" alt="Logo" style="height: 100px;">
+        <h2 class="mt-2">تقرير المالية</h2>
+        <p class="text-muted">
+            الفترة من {{ \Carbon\Carbon::parse($startDate)->format('Y-m-d') }}
+            إلى {{ \Carbon\Carbon::parse($endDate)->format('Y-m-d') }}
+        </p>
+    </div>
+
+    <div class="table-responsive mt-4">
+        <table class="table table-bordered text-center">
+            <thead class="table-dark">
+                <tr>
+                    <th style="width: 33%">الإيرادات</th>
+                    <th style="width: 33%">المصروفات</th>
+                    <th style="width: 33%">الرصيد</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr style="height: 100px;">
+                    <td class="align-middle text-success fs-3 fw-bold">
+                        {{ number_format($totalRevenues, 2) }} ج.م
+                    </td>
+                    <td class="align-middle text-danger fs-3 fw-bold">
+                        {{ number_format($totalExpenses, 2) }} ج.م
+                    </td>
+                    <td class="align-middle text-primary fs-3 fw-bold">
+                        {{ number_format($difference, 2) }} ج.م
+                    </td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+</div>
+
 
         <!-- Detailed Tables -->
         <div class="row mt-4">
@@ -221,17 +233,65 @@
                 margin: 10mm;
             }
             .d-print-none {
-                display: none !important;
-            }
-            .d-print-block {
-                display: block !important;
-            }
+    display: none !important;
+}
+.d-print-block {
+    display: block !important;
+}
+
         }
     </style>
+<script>
+    function printReport() {
+        const printContents = document.getElementById('print-section').innerHTML;
 
-    <script>
-        function printReport() {
-            window.print();
-        }
-    </script>
+        const printWindow = window.open('', '', 'width=900,height=650');
+        printWindow.document.write(`
+            <html dir="rtl" lang="ar">
+                <head>
+                    <title>طباعة التقرير</title>
+                    <style>
+                        body {
+                            font-family: Arial, sans-serif;
+                            padding: 20px;
+                            direction: rtl;
+                        }
+                        .text-center { text-align: center; }
+                        .mb-4 { margin-bottom: 1.5rem; }
+                        h2 { font-size: 24px; margin-top: 10px; }
+                        p { font-size: 16px; margin: 0; }
+                        table {
+                            width: 100%;
+                            border-collapse: collapse;
+                            margin-top: 20px;
+                            font-size: 18px;
+                        }
+                        th, td {
+                            border: 1px solid #000;
+                            padding: 10px;
+                            text-align: center;
+                        }
+                        th {
+                            background-color: #343a40;
+                            color: #fff;
+                        }
+                        .text-success { color: green; }
+                        .text-danger { color: red; }
+                        .text-primary { color: blue; }
+                    </style>
+                </head>
+                <body>
+                    ${printContents}
+                </body>
+            </html>
+        `);
+
+        printWindow.document.close();
+        printWindow.focus();
+        printWindow.print();
+        printWindow.close();
+    }
+</script>
+
+
 @endsection
