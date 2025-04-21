@@ -3,9 +3,9 @@
 -- https://www.phpmyadmin.net/
 --
 -- Host: 127.0.0.1
--- Generation Time: 22 مارس 2025 الساعة 03:34
--- إصدار الخادم: 10.4.27-MariaDB
--- PHP Version: 8.2.4
+-- Generation Time: 22 أبريل 2025 الساعة 01:39
+-- إصدار الخادم: 10.4.32-MariaDB
+-- PHP Version: 8.2.12
 
 SET SQL_MODE = "NO_AUTO_VALUE_ON_ZERO";
 START TRANSACTION;
@@ -18,7 +18,7 @@ SET time_zone = "+00:00";
 /*!40101 SET NAMES utf8mb4 */;
 
 --
--- Database: `lawyersclob`
+-- Database: `lawyersclob1`
 --
 
 -- --------------------------------------------------------
@@ -103,6 +103,31 @@ INSERT INTO `budgets` (`id`, `category_id`, `tenant_name`, `amount`, `notes`, `d
 -- --------------------------------------------------------
 
 --
+-- بنية الجدول `budget_prints`
+--
+
+CREATE TABLE `budget_prints` (
+  `id` bigint(20) UNSIGNED NOT NULL,
+  `serial_number` varchar(255) NOT NULL,
+  `printed_at` timestamp NOT NULL DEFAULT current_timestamp(),
+  `category_id` bigint(20) UNSIGNED NOT NULL,
+  `amount` decimal(15,2) NOT NULL,
+  `notes` text DEFAULT NULL,
+  `created_at` timestamp NULL DEFAULT NULL,
+  `updated_at` timestamp NULL DEFAULT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+--
+-- إرجاع أو استيراد بيانات الجدول `budget_prints`
+--
+
+INSERT INTO `budget_prints` (`id`, `serial_number`, `printed_at`, `category_id`, `amount`, `notes`, `created_at`, `updated_at`) VALUES
+(1, '12', '2025-04-21 21:00:15', 17, 20110.00, '8دفع في شهر', '2025-04-21 21:00:15', '2025-04-21 21:00:15'),
+(2, '13', '2025-04-21 21:30:17', 17, 20110.00, '8دفع في شهر', '2025-04-21 21:30:17', '2025-04-21 21:30:17');
+
+-- --------------------------------------------------------
+
+--
 -- بنية الجدول `cache`
 --
 
@@ -175,7 +200,7 @@ CREATE TABLE `counters` (
 --
 
 INSERT INTO `counters` (`id`, `member_subscription_sequence`, `disbursement_order_sequence`, `supply_order_sequence`, `created_at`, `updated_at`) VALUES
-(1, 4, 2, 2, '2025-03-22 00:03:05', '2025-03-22 00:19:29');
+(1, 9, 5, 14, '2025-03-22 00:03:05', '2025-04-21 21:30:17');
 
 -- --------------------------------------------------------
 
@@ -217,6 +242,33 @@ CREATE TABLE `invoices` (
 
 INSERT INTO `invoices` (`id`, `category_id`, `name`, `invoice_number`, `amount`, `description`, `deleted_at`, `created_at`, `updated_at`) VALUES
 (2, 14, 'ail', '1255', 20225.00, 'asd', NULL, '2025-03-21 02:09:48', '2025-03-21 02:09:48');
+
+-- --------------------------------------------------------
+
+--
+-- بنية الجدول `invoice_prints`
+--
+
+CREATE TABLE `invoice_prints` (
+  `id` bigint(20) UNSIGNED NOT NULL,
+  `serial_number` varchar(255) NOT NULL,
+  `category_id` bigint(20) UNSIGNED NOT NULL,
+  `invoice_number` varchar(255) NOT NULL,
+  `amount` decimal(15,2) NOT NULL,
+  `description` text DEFAULT NULL,
+  `printed_at` timestamp NOT NULL DEFAULT current_timestamp(),
+  `created_at` timestamp NULL DEFAULT NULL,
+  `updated_at` timestamp NULL DEFAULT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+--
+-- إرجاع أو استيراد بيانات الجدول `invoice_prints`
+--
+
+INSERT INTO `invoice_prints` (`id`, `serial_number`, `category_id`, `invoice_number`, `amount`, `description`, `printed_at`, `created_at`, `updated_at`) VALUES
+(1, '3', 14, '1255', 20225.00, 'asd', '2025-04-21 21:16:38', '2025-04-21 21:16:38', '2025-04-21 21:16:38'),
+(2, '3', 14, '1255', 20225.00, 'asd', '2025-04-21 21:28:36', '2025-04-21 21:28:36', '2025-04-21 21:28:36'),
+(3, '4', 14, '1255', 20225.00, 'asd', '2025-04-21 21:29:49', '2025-04-21 21:29:49', '2025-04-21 21:29:49');
 
 -- --------------------------------------------------------
 
@@ -6050,6 +6102,34 @@ CREATE TABLE `membership_sections` (
 -- --------------------------------------------------------
 
 --
+-- بنية الجدول `member_prints`
+--
+
+CREATE TABLE `member_prints` (
+  `id` bigint(20) UNSIGNED NOT NULL,
+  `serial_number` varchar(255) NOT NULL,
+  `printed_at` timestamp NOT NULL DEFAULT current_timestamp(),
+  `name` varchar(255) DEFAULT NULL,
+  `notes` text DEFAULT NULL,
+  `amount` decimal(10,2) NOT NULL DEFAULT 0.00,
+  `created_at` timestamp NULL DEFAULT NULL,
+  `updated_at` timestamp NULL DEFAULT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+--
+-- إرجاع أو استيراد بيانات الجدول `member_prints`
+--
+
+INSERT INTO `member_prints` (`id`, `serial_number`, `printed_at`, `name`, `notes`, `amount`, `created_at`, `updated_at`) VALUES
+(1, '4', '2025-04-21 21:23:39', 'محمد صلاح الدين حسين سيد', 'طبع 2024 + حرم العضو ايصال 12864 بتاريخ 6/6/2024  20ج', 0.00, '2025-04-21 21:23:39', '2025-04-21 21:23:39'),
+(2, '5', '2025-04-21 21:24:51', 'محمد صلاح الدين حسين سيد', 'طبع 2024 + حرم العضو ايصال 12864 بتاريخ 6/6/2024  20ج', 0.00, '2025-04-21 21:24:51', '2025-04-21 21:24:51'),
+(3, '6', '2025-04-21 21:25:22', 'محمد صلاح الدين حسين سيد', 'طبع 2024 + حرم العضو ايصال 12864 بتاريخ 6/6/2024  20ج', 0.00, '2025-04-21 21:25:22', '2025-04-21 21:25:22'),
+(4, '7', '2025-04-21 21:26:58', 'محمد صلاح الدين حسين سيد', 'طبع 2024 + حرم العضو ايصال 12864 بتاريخ 6/6/2024  20ج', 0.00, '2025-04-21 21:26:58', '2025-04-21 21:26:58'),
+(5, '8', '2025-04-21 21:27:17', 'محمد صلاح الدين حسين سيد', 'طبع 2024 + حرم العضو ايصال 12864 بتاريخ 6/6/2024  20ج', 0.00, '2025-04-21 21:27:17', '2025-04-21 21:27:17');
+
+-- --------------------------------------------------------
+
+--
 -- بنية الجدول `migrations`
 --
 
@@ -6171,6 +6251,14 @@ ALTER TABLE `budgets`
   ADD KEY `budgets_category_id_foreign` (`category_id`);
 
 --
+-- Indexes for table `budget_prints`
+--
+ALTER TABLE `budget_prints`
+  ADD PRIMARY KEY (`id`),
+  ADD UNIQUE KEY `serial_number` (`serial_number`),
+  ADD KEY `fk_budget_prints_category` (`category_id`);
+
+--
 -- Indexes for table `cache`
 --
 ALTER TABLE `cache`
@@ -6210,6 +6298,13 @@ ALTER TABLE `invoices`
   ADD KEY `invoices_category_id_foreign` (`category_id`);
 
 --
+-- Indexes for table `invoice_prints`
+--
+ALTER TABLE `invoice_prints`
+  ADD PRIMARY KEY (`id`),
+  ADD KEY `fk_invoice_prints_category` (`category_id`);
+
+--
 -- Indexes for table `jobs`
 --
 ALTER TABLE `jobs`
@@ -6234,6 +6329,13 @@ ALTER TABLE `members`
 ALTER TABLE `membership_sections`
   ADD PRIMARY KEY (`id`),
   ADD UNIQUE KEY `membership_sections_name_unique` (`name`);
+
+--
+-- Indexes for table `member_prints`
+--
+ALTER TABLE `member_prints`
+  ADD PRIMARY KEY (`id`),
+  ADD UNIQUE KEY `serial_number` (`serial_number`);
 
 --
 -- Indexes for table `migrations`
@@ -6286,6 +6388,12 @@ ALTER TABLE `budgets`
   MODIFY `id` bigint(20) UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=3;
 
 --
+-- AUTO_INCREMENT for table `budget_prints`
+--
+ALTER TABLE `budget_prints`
+  MODIFY `id` bigint(20) UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=3;
+
+--
 -- AUTO_INCREMENT for table `categories`
 --
 ALTER TABLE `categories`
@@ -6310,6 +6418,12 @@ ALTER TABLE `invoices`
   MODIFY `id` bigint(20) UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=3;
 
 --
+-- AUTO_INCREMENT for table `invoice_prints`
+--
+ALTER TABLE `invoice_prints`
+  MODIFY `id` bigint(20) UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=4;
+
+--
 -- AUTO_INCREMENT for table `jobs`
 --
 ALTER TABLE `jobs`
@@ -6326,6 +6440,12 @@ ALTER TABLE `members`
 --
 ALTER TABLE `membership_sections`
   MODIFY `id` bigint(20) UNSIGNED NOT NULL AUTO_INCREMENT;
+
+--
+-- AUTO_INCREMENT for table `member_prints`
+--
+ALTER TABLE `member_prints`
+  MODIFY `id` bigint(20) UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=6;
 
 --
 -- AUTO_INCREMENT for table `migrations`
@@ -6362,6 +6482,12 @@ ALTER TABLE `budgets`
   ADD CONSTRAINT `budgets_category_id_foreign` FOREIGN KEY (`category_id`) REFERENCES `categories` (`id`) ON DELETE CASCADE;
 
 --
+-- قيود الجداول `budget_prints`
+--
+ALTER TABLE `budget_prints`
+  ADD CONSTRAINT `fk_budget_prints_category` FOREIGN KEY (`category_id`) REFERENCES `categories` (`id`) ON DELETE CASCADE;
+
+--
 -- قيود الجداول `categories`
 --
 ALTER TABLE `categories`
@@ -6372,6 +6498,12 @@ ALTER TABLE `categories`
 --
 ALTER TABLE `invoices`
   ADD CONSTRAINT `invoices_category_id_foreign` FOREIGN KEY (`category_id`) REFERENCES `categories` (`id`) ON DELETE CASCADE;
+
+--
+-- قيود الجداول `invoice_prints`
+--
+ALTER TABLE `invoice_prints`
+  ADD CONSTRAINT `fk_invoice_prints_category` FOREIGN KEY (`category_id`) REFERENCES `categories` (`id`) ON DELETE CASCADE;
 COMMIT;
 
 /*!40101 SET CHARACTER_SET_CLIENT=@OLD_CHARACTER_SET_CLIENT */;
