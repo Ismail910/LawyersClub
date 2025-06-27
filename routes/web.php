@@ -89,6 +89,7 @@ Route::middleware(['auth:admin,accountant,hr'])->group(function () {
 
     // Route for InvoicePrintController index
     Route::get('/invoiceprints', [InvoicePrintController::class, 'index'])->name('invoiceprints.index');
+    Route::get('/invoiceprints/subcategories', [InvoicePrintController::class, 'getSubcategories'])->name('invoiceprints.subcategories');
 
 
     // Route for MemberPrintController index
@@ -96,6 +97,7 @@ Route::middleware(['auth:admin,accountant,hr'])->group(function () {
 
     // Route for BudgetPrintController index
     Route::get('budgetprints', [BudgetPrintController::class, 'index'])->name('budgetprints.index');
+    Route::get('/budgetprints/subcategories', [BudgetPrintController::class, 'getSubcategories'])->name('budgetprints.subcategories');
 
 
 

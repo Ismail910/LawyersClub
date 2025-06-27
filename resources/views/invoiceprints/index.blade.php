@@ -54,8 +54,8 @@
         }
 
         .form-group {
-            flex: 0 0 33.333333%;
-            max-width: 33.333333%;
+            flex: 0 0 20%;
+            max-width: 20%;
             padding-right: 15px;
             padding-left: 15px;
             margin-bottom: 1rem;
@@ -228,6 +228,21 @@
             <form id="filterForm">
                 <div class="form-row">
                     <div class="form-group">
+                        <label for="parent_category_id">الفئة الرئيسية</label>
+                        <select id="parent_category_id" name="parent_category_id" class="form-control">
+                            <option value="all">جميع الفئات الرئيسية</option>
+                            @foreach($categories as $category)
+                                <option value="{{ $category->id }}">{{ $category->name }}</option>
+                            @endforeach
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="subcategory_id">الفئة الفرعية</label>
+                        <select id="subcategory_id" name="subcategory_id" class="form-control">
+                            <option value="all">جميع الفئات الفرعية</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
                         <label for="from">من تاريخ</label>
                         <input type="date" id="from" name="from" class="form-control">
                     </div>
@@ -244,7 +259,7 @@
 
         <!-- Total Display -->
         <div id="totalDisplay" class="total-display" style="display: none;">
-            إجمالي المبالغ: <span id="totalAmount" class="total-amount">0.00</span> جنية
+            إجمالي المبالغ: <span id="totalAmount" class="total-amount">0.00 ج</span>
         </div>
 
         <!-- Invoice Table -->
@@ -276,6 +291,17 @@
     <script src="{{ asset('assets/js/jquery.dataTables.min.js') }}"></script>
 
     <script>
+        // Global function to format amounts with proper thousands separators
+        function formatAmount(amount) {
+            const numericAmount = parseFloat(amount) || 0;
+            const formatted = numericAmount.toLocaleString('ar-EG', {
+                minimumFractionDigits: 2,
+                maximumFractionDigits: 2,
+                useGrouping: true
+            });
+            return formatted + ' ج';
+        }
+
         let dataTable;
         let totalAmount = 0;
 
@@ -284,18 +310,20 @@
             dataTable = $('#invoicePrintTable').DataTable({
         processing: true,
         serverSide: false, // Change to false to disable server-side processing
-        ajax: {
-            url: '/invoiceprints',
-            type: 'GET',
-            data: function(d) {
-                d.from = $('#from').val();
-                d.to = $('#to').val();
-            },
+                    ajax: {
+                url: '/invoiceprints',
+                type: 'GET',
+                data: function(d) {
+                    d.from = $('#from').val();
+                    d.to = $('#to').val();
+                    d.parent_category_id = $('#parent_category_id').val();
+                    d.subcategory_id = $('#subcategory_id').val();
+                },
             dataSrc: function(json) {
                 // Calculate total amount from the data
                 totalAmount = json.data.reduce((sum, row) => sum + parseFloat(row.amount || 0), 0);
                 $('#totalDisplay').show();
-                $('#totalAmount').text(totalAmount.toFixed(2));
+                $('#totalAmount').text(formatAmount(totalAmount));
                 return json.data;
             }
         },
@@ -307,7 +335,7 @@
                 data: 'amount',
                 name: 'amount',
                 render: function(data, type, row) {
-                    return parseFloat(data || 0).toFixed(2);
+                    return formatAmount(data);
                 }
             },
             { data: 'description', name: 'description' },
@@ -331,6 +359,34 @@
             // Set default dates
             setDefaultDates();
 
+            // Handle parent category change
+            $('#parent_category_id').on('change', function() {
+                const parentId = $(this).val();
+                const subcategorySelect = $('#subcategory_id');
+
+                // Clear subcategory options
+                subcategorySelect.html('<option value="all">جميع الفئات الفرعية</option>');
+
+                if (parentId && parentId !== 'all') {
+                    // Load subcategories for the selected parent
+                    $.ajax({
+                        url: '/invoiceprints/subcategories',
+                        method: 'GET',
+                        data: { parent_id: parentId },
+                        success: function(data) {
+                            data.forEach(function(subcategory) {
+                                subcategorySelect.append(
+                                    `<option value="${subcategory.id}">${subcategory.name}</option>`
+                                );
+                            });
+                        },
+                        error: function() {
+                            console.error('خطأ في تحميل الفئات الفرعية');
+                        }
+                    });
+                }
+            });
+
             // Filter form submission
             $('#filterForm').on('submit', function(e) {
                 e.preventDefault();
@@ -345,11 +401,25 @@
 
         function setDefaultDates() {
             const currentYear = new Date().getFullYear();
-            const startOfYear = `${currentYear}-01-01`;
-            const endOfYear = `${currentYear}-12-31`;
+            const currentMonth = new Date().getMonth(); // 0-based (0 = January, 6 = July)
 
-            $('#from').val(startOfYear);
-            $('#to').val(endOfYear);
+            let fiscalStartYear, fiscalEndYear;
+
+            if (currentMonth >= 6) { // July (6) or later
+                // Current fiscal year
+                fiscalStartYear = currentYear;
+                fiscalEndYear = currentYear + 1;
+            } else {
+                // Previous fiscal year
+                fiscalStartYear = currentYear - 1;
+                fiscalEndYear = currentYear;
+            }
+
+            const startOfFiscalYear = `${fiscalStartYear}-07-01`;
+            const endOfFiscalYear = `${fiscalEndYear}-06-30`;
+
+            $('#from').val(startOfFiscalYear);
+            $('#to').val(endOfFiscalYear);
         }
 
         function printTable() {
@@ -405,7 +475,7 @@
                     <tfoot>
                         <tr>
                             <td colspan="3" style="text-align: left; font-weight: bold;">إجمالي الصفحة</td>
-                            <td style="font-weight: bold;">${pageTotal.toFixed(2)}</td>
+                            <td style="font-weight: bold;">${formatAmount(pageTotal)}</td>
                             <td colspan="2"></td>
                         </tr>
                     </tfoot>
@@ -423,7 +493,7 @@
             // Add final total
             printSection.append(`
                 <div style="margin-top: 20px; text-align: left; font-weight: bold; font-size: 16px;">
-                    الإجمالي العام: ${totalAmount.toFixed(2)} جنية
+                    الإجمالي العام: ${formatAmount(totalAmount)}
                 </div>
             `);
 

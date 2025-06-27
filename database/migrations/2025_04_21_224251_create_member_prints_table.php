@@ -30,3 +30,14 @@ return new class extends Migration
         Schema::dropIfExists('member_prints');
     }
 };
+
+// sql command to create the table
+// CREATE TABLE member_prints (
+//     id INT AUTO_INCREMENT PRIMARY KEY,
+//     serial_number VARCHAR(255) NOT NULL,
+//     name VARCHAR(255) NOT NULL,
+//     notes TEXT,
+//     amount DECIMAL(15, 2) NOT NULL,
+//     printed_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+//     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+// );

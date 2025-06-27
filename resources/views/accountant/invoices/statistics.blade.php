@@ -129,6 +129,22 @@
 <script src="{{ asset('assets/js/sweetalert2.min.js') }}"></script>
 
 <script>
+    // Global function to format amounts with proper thousands separators
+    function formatAmount(amount) {
+        // Ensure the amount is a number
+        const numericAmount = parseFloat(amount) || 0;
+
+        // Format with Arabic locale for proper RTL number display
+        // Use comma as thousands separator and always show 2 decimal places
+        const formatted = numericAmount.toLocaleString('ar-EG', {
+            minimumFractionDigits: 2,
+            maximumFractionDigits: 2,
+            useGrouping: true // Ensure thousands separators are used
+        });
+
+        return formatted + ' ج';
+    }
+
     $(document).ready(function () {
         let today = new Date();
         let currentYear = today.getFullYear();
@@ -183,29 +199,15 @@
                     const monthlyTotal = response.monthly.reduce((acc, stat) => acc + stat.total_amount, 0);
                     const yearlyTotal = response.yearly.reduce((acc, stat) => acc + stat.total_amount, 0);
 
-                    $('#monthly-stats').html(monthlyTotal.toLocaleString('ar-EG', {
-                        minimumFractionDigits: 2,
-                        maximumFractionDigits: 2
-                    }) + ' ج');
-
-                    $('#yearly-stats').html(yearlyTotal.toLocaleString('ar-EG', {
-                        minimumFractionDigits: 2,
-                        maximumFractionDigits: 2
-                    }) + ' ج');
-
-                    $('#total-amount').html(response.total.toLocaleString('ar-EG', {
-                        minimumFractionDigits: 2,
-                        maximumFractionDigits: 2
-                    }) + ' ج');
+                    $('#monthly-stats').html(formatAmount(monthlyTotal));
+                    $('#yearly-stats').html(formatAmount(yearlyTotal));
+                    $('#total-amount').html(formatAmount(response.total));
 
                     // Update category-wise statistics
                     $('#category-stats').html(response.categories.map(stat => `
                         <div class="d-flex justify-content-between p-2 border-bottom">
                             <span>${stat.category_name}</span>
-                            <strong>${stat.total_amount.toLocaleString('ar-EG', {
-                                minimumFractionDigits: 2,
-                                maximumFractionDigits: 2
-                            })} ج</strong>
+                            <strong>${formatAmount(stat.total_amount)}</strong>
                         </div>
                     `).join(''));
 
@@ -220,12 +222,9 @@
 
                 // Format amount with Arabic currency
                 if (item.amount !== undefined && item.amount !== null) {
-                    item.formatted_amount = parseFloat(item.amount).toLocaleString('ar-EG', {
-                        minimumFractionDigits: 2,
-                        maximumFractionDigits: 2
-                    }) + ' ج';
+                    item.formatted_amount = formatAmount(item.amount);
                 } else {
-                    item.formatted_amount = '0.00 ج';
+                    item.formatted_amount = formatAmount(0);
                 }
 
                 // Format created_at to y-m-d (e.g., 25-03-2025)
@@ -283,10 +282,7 @@
             let totalAmount = 0;
             let rowsHtml = data.map((row, index) => {
                 totalAmount += parseFloat(row.amount) || 0;
-                const formattedAmount = parseFloat(row.amount || 0).toLocaleString('ar-EG', {
-                    minimumFractionDigits: 2,
-                    maximumFractionDigits: 2
-                }) + ' ج';
+                                 const formattedAmount = formatAmount(row.amount || 0);
                 return `
                     <tr>
                         <td class=\"text-center\">${index + 1}</td>
@@ -432,10 +428,7 @@
                         <tfoot>
                             <tr>
                                 <td colspan=\"3\" class=\"text-right\"><strong>@lang('translation.Total'):</strong></td>
-                                <td class=\"text-right\"><strong>${totalAmount.toLocaleString('ar-EG', {
-                                    minimumFractionDigits: 2,
-                                    maximumFractionDigits: 2
-                                })} ج</strong></td>
+                                                                 <td class=\"text-right\"><strong>${formatAmount(totalAmount)}</strong></td>
                                 <td colspan=\"2\"></td>
                             </tr>
                         </tfoot>

@@ -30,3 +30,14 @@ return new class extends Migration
         Schema::dropIfExists('budget_prints');
     }
 };
+
+// sql command to create the table
+    // CREATE TABLE budget_prints (
+    //     id INT AUTO_INCREMENT PRIMARY KEY,
+    //     serial_number VARCHAR(255) NOT NULL,
+    //     category_id INT NOT NULL,
+    //     amount DECIMAL(15, 2) NOT NULL,
+    //     notes TEXT,
+    //     printed_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    //     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    // );

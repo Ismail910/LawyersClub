@@ -31,3 +31,14 @@ return new class extends Migration
         Schema::dropIfExists('invoice_prints');
     }
 };
+
+// sql command to create the table
+// CREATE TABLE invoice_prints (
+//     id INT AUTO_INCREMENT PRIMARY KEY,
+//     serial_number VARCHAR(255) NOT NULL,
+//     category_id INT NOT NULL,
+//     invoice_number VARCHAR(255) NOT NULL,
+//     amount DECIMAL(15, 2) NOT NULL,
+//     description TEXT,
+//     printed_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+//     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,

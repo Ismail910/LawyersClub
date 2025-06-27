@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\BudgetPrint;
+use App\Models\Category;
 use Illuminate\Http\Request;
 use Yajra\DataTables\Facades\DataTables;
 
@@ -10,33 +11,99 @@ class BudgetPrintController extends Controller
 {
     public function index(Request $request)
     {
-        $currentYear = date('Y');
-        $from = $request->has('from') ? $request->get('from') : "{$currentYear}-01-01";
-        $to = $request->has('to') ? $request->get('to') : "{$currentYear}-12-31";
-
         if ($request->ajax()) {
-            $query = BudgetPrint::with(['category'])
-                ->whereBetween('printed_at', [$from, $to])
-                ->select([
-                    'budget_prints.id',
-                    'budget_prints.serial_number',
-                    'budget_prints.amount',
-                    'budget_prints.notes as description',
-                    'budget_prints.printed_at',
-                    'budget_prints.category_id'
-                ])
-                ->get(); // Get all records at once
+            $from = $request->input('from');
+            $to = $request->input('to');
+            $parentCategoryId = $request->input('parent_category_id');
+            $subcategoryId = $request->input('subcategory_id');
 
-            return DataTables::of($query)
+            if (!$from) {
+                // Set fiscal year start date (July 1)
+                $currentYear = date('Y');
+                $currentMonth = date('n');
+
+                if ($currentMonth >= 7) {
+                    // Current fiscal year (July 1 of current year)
+                    $from = $currentYear . '-07-01';
+                } else {
+                    // Previous fiscal year (July 1 of previous year)
+                    $from = ($currentYear - 1) . '-07-01';
+                }
+            }
+            if (!$to) {
+                // Set fiscal year end date (June 30)
+                $currentYear = date('Y');
+                $currentMonth = date('n');
+
+                if ($currentMonth >= 7) {
+                    // Current fiscal year (June 30 of next year)
+                    $to = ($currentYear + 1) . '-06-30';
+                } else {
+                    // Previous fiscal year (June 30 of current year)
+                    $to = $currentYear . '-06-30';
+                }
+            }
+
+            $query = BudgetPrint::with(['category'])
+                ->whereBetween('printed_at', [$from, $to]);
+
+            // Filter by categories
+            if ($parentCategoryId && $parentCategoryId !== 'all') {
+                if ($subcategoryId && $subcategoryId !== 'all') {
+                    // Filter by specific subcategory
+                    $query->where('category_id', $subcategoryId);
+                } else {
+                    // Filter by all subcategories of the parent
+                    $subcategoryIds = Category::where('parent_id', $parentCategoryId)->pluck('id')->toArray();
+                    if (!empty($subcategoryIds)) {
+                        $query->whereIn('category_id', $subcategoryIds);
+                    }
+                }
+            } elseif ($subcategoryId && $subcategoryId !== 'all') {
+                // Filter by specific subcategory even if no parent selected
+                $query->where('category_id', $subcategoryId);
+            }
+
+            $data = $query->select([
+                'budget_prints.id',
+                'budget_prints.serial_number',
+                'budget_prints.amount',
+                'budget_prints.notes as description',
+                'budget_prints.printed_at',
+                'budget_prints.category_id'
+            ])->get();
+
+            return DataTables::of($data)
                 ->addColumn('category_name', function($budgetPrint) {
                     return $budgetPrint->category ? $budgetPrint->category->name : 'غير محدد';
                 })
                 ->addColumn('printed_at_formatted', function($budgetPrint) {
                     return $budgetPrint->printed_at ? $budgetPrint->printed_at->format('Y-m-d') : '';
                 })
+                ->editColumn('amount', function($budgetPrint) {
+                    return (float) $budgetPrint->amount;
+                })
                 ->make(true);
         }
 
-        return view('budgetprints.index', compact('from', 'to'));
+        // Get only parent categories (categories without parent_id) for the filter dropdown
+        $categories = Category::whereNull('parent_id')->get();
+
+        return view('budgetprints.index', compact('categories'));
+    }
+
+    public function getSubcategories(Request $request)
+    {
+        $parentId = $request->input('parent_id');
+
+        if (!$parentId) {
+            return response()->json([]);
+        }
+
+        $subcategories = Category::where('parent_id', $parentId)
+            ->select('id', 'name')
+            ->get();
+
+        return response()->json($subcategories);
     }
 }

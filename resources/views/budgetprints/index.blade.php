@@ -54,8 +54,8 @@
         }
 
         .form-group {
-            flex: 0 0 33.333333%;
-            max-width: 33.333333%;
+            flex: 0 0 20%;
+            max-width: 20%;
             padding-right: 15px;
             padding-left: 15px;
             margin-bottom: 1rem;
@@ -228,12 +228,27 @@
             <form id="filterForm">
                 <div class="form-row">
                     <div class="form-group">
+                        <label for="parent_category_id">الفئة الرئيسية</label>
+                        <select id="parent_category_id" name="parent_category_id" class="form-control">
+                            <option value="all">جميع الفئات الرئيسية</option>
+                            @foreach($categories as $category)
+                                <option value="{{ $category->id }}">{{ $category->name }}</option>
+                            @endforeach
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="subcategory_id">الفئة الفرعية</label>
+                        <select id="subcategory_id" name="subcategory_id" class="form-control">
+                            <option value="all">جميع الفئات الفرعية</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
                         <label for="from">من تاريخ</label>
-                        <input type="date" id="from" name="from" class="form-control" value="{{ $from }}">
+                        <input type="date" id="from" name="from" class="form-control">
                     </div>
                     <div class="form-group">
                         <label for="to">إلى تاريخ</label>
-                        <input type="date" id="to" name="to" class="form-control" value="{{ $to }}">
+                        <input type="date" id="to" name="to" class="form-control">
                     </div>
                     <div class="form-group">
                         <button type="submit" class="btn btn-primary">بحث</button>
@@ -244,7 +259,7 @@
 
         <!-- Total Display -->
         <div id="totalDisplay" class="total-display" style="display: none;">
-            إجمالي المبالغ: <span id="totalAmount" class="total-amount">0.00</span> جنية
+            إجمالي المبالغ: <span id="totalAmount" class="total-amount">0.00 ج</span>
         </div>
 
         <!-- Budget Table -->
@@ -276,94 +291,154 @@
     <script src="https://cdn.datatables.net/plug-ins/1.11.5/i18n/ar.json"></script>
 
     <script>
+        // Global function to format amounts with proper thousands separators
+        function formatAmount(amount) {
+            const numericAmount = parseFloat(amount) || 0;
+            const formatted = numericAmount.toLocaleString('ar-EG', {
+                minimumFractionDigits: 2,
+                maximumFractionDigits: 2,
+                useGrouping: true
+            });
+            return formatted + ' ج';
+        }
+
         let dataTable;
         let totalAmount = 0;
+
         $(document).ready(function() {
-    let dataTable;
-    let totalAmount = 0;
+            // Initialize DataTable
+            dataTable = $('#budgetPrintTable').DataTable({
+                processing: true,
+                serverSide: false,
+                ajax: {
+                    url: '/budgetprints',
+                    type: 'GET',
+                    data: function(d) {
+                        d.from = $('#from').val();
+                        d.to = $('#to').val();
+                        d.parent_category_id = $('#parent_category_id').val();
+                        d.subcategory_id = $('#subcategory_id').val();
+                    },
+                    dataSrc: function(json) {
+                        // Calculate total amount from the data
+                        totalAmount = json.data.reduce((sum, row) => sum + parseFloat(row.amount || 0), 0);
+                        $('#totalDisplay').show();
+                        $('#totalAmount').text(formatAmount(totalAmount));
+                        return json.data;
+                    }
+                },
+                columns: [
+                    { data: 'serial_number', name: 'serial_number' },
+                    { data: 'category_name', name: 'category_name' },
+                    {
+                        data: 'amount',
+                        name: 'amount',
+                        render: function(data, type, row) {
+                            return formatAmount(data);
+                        }
+                    },
+                    { data: 'description', name: 'description' },
+                    { data: 'printed_at_formatted', name: 'printed_at' }
+                ],
+                language: {
+                    url: '//cdn.datatables.net/plug-ins/1.11.5/i18n/ar.json'
+                },
+                paging: false,
+                scrollY: "600px",
+                scrollCollapse: true,
+                dom: '<"top"fl>rt<"bottom"ip>'
+            });
 
-    // Initialize DataTable
-    dataTable = $('#budgetPrintTable').DataTable({
-        processing: true,
-        serverSide: false,
-        ajax: {
-            url: '/budgetprints',
-            type: 'GET',
-            data: function(d) {
-                d.from = $('#from').val();
-                d.to = $('#to').val();
-            },
-            dataSrc: function(json) {
-                // Calculate total amount from the data (amount is in column index 2)
-                totalAmount = json.data.reduce((sum, row) => sum + parseFloat(row.amount || 0), 0);
-                $('#totalDisplay').show();
-                $('#totalAmount').text(totalAmount.toFixed(2));
-                return json.data;
-            }
-        },
-        columns: [
-            { data: 'serial_number', name: 'serial_number' },
-            { data: 'category_name', name: 'category_name' },
-            {
-                data: 'amount',
-                name: 'amount',
-                render: function(data, type, row) {
-                    return parseFloat(data || 0).toFixed(2);
+            // Set default dates
+            setDefaultDates();
+
+            // Handle parent category change
+            $('#parent_category_id').on('change', function() {
+                const parentId = $(this).val();
+                const subcategorySelect = $('#subcategory_id');
+
+                // Clear subcategory options
+                subcategorySelect.html('<option value="all">جميع الفئات الفرعية</option>');
+
+                if (parentId && parentId !== 'all') {
+                    // Load subcategories for the selected parent
+                    $.ajax({
+                        url: '/budgetprints/subcategories',
+                        method: 'GET',
+                        data: { parent_id: parentId },
+                        success: function(data) {
+                            data.forEach(function(subcategory) {
+                                subcategorySelect.append(
+                                    `<option value="${subcategory.id}">${subcategory.name}</option>`
+                                );
+                            });
+                        },
+                        error: function() {
+                            console.error('خطأ في تحميل الفئات الفرعية');
+                        }
+                    });
                 }
-            },
-            { data: 'description', name: 'description' },
-            { data: 'printed_at_formatted', name: 'printed_at' }
-        ],
-        language: {
-            url: '//cdn.datatables.net/plug-ins/1.11.5/i18n/ar.json'
-        },
-        paging: false,
-        scrollY: "600px",
-        scrollCollapse: true,
-        dom: '<"top"fl>rt<"bottom"ip>'
-    });
+            });
 
-    // Filter form submission
-    $('#filterForm').on('submit', function(e) {
-        e.preventDefault();
-        dataTable.ajax.reload();
-    });
+            // Filter form submission
+            $('#filterForm').on('submit', function(e) {
+                e.preventDefault();
+                dataTable.ajax.reload();
+            });
 
-    // Print button click
-    $('#printButton').on('click', function() {
-        printTable();
-    });
-});
+            // Print button click
+            $('#printButton').on('click', function() {
+                printTable();
+            });
+        });
 
-function printTable() {
-    // Get all rows
-    const rows = $('#budgetPrintTable tbody tr').get();
-    const rowsPerPage = 15;
-    const pageCount = Math.ceil(rows.length / rowsPerPage);
+        function setDefaultDates() {
+            const currentYear = new Date().getFullYear();
+            const currentMonth = new Date().getMonth(); // 0-based (0 = January, 6 = July)
 
-    // Calculate total amount from the displayed rows (amount is in column index 2)
-    totalAmount = rows.reduce((sum, row) => {
-        return sum + parseFloat($(row).find('td:eq(2)').text() || 0);
-    }, 0);
+            let fiscalStartYear, fiscalEndYear;
 
-    // Create a print section
-    const printSection = $('#printSection');
-    printSection.empty();
+            if (currentMonth >= 6) { // July (6) or later
+                // Current fiscal year
+                fiscalStartYear = currentYear;
+                fiscalEndYear = currentYear + 1;
+            } else {
+                // Previous fiscal year
+                fiscalStartYear = currentYear - 1;
+                fiscalEndYear = currentYear;
+            }
 
-    // Add header
-    printSection.append(`
-        <div style="text-align: center; margin-bottom: 20px;">
-            <h2 style="margin: 0; color: #2c3e50;">كشف الميزانية المطبوعة</h2>
-            <p style="margin: 5px 0; color: #7f8c8d;">الفترة من ${$('#from').val()} إلى ${$('#to').val()}</p>
-        </div>
-    `);
+            const startOfFiscalYear = `${fiscalStartYear}-07-01`;
+            const endOfFiscalYear = `${fiscalEndYear}-06-30`;
 
-    // Add total display
-    printSection.append(`
-        <div class="total-display">
-            إجمالي المبالغ: <span class="total-amount">${totalAmount.toFixed(2)}</span> جنية
-        </div>
-    `);
+            $('#from').val(startOfFiscalYear);
+            $('#to').val(endOfFiscalYear);
+        }
+
+        function printTable() {
+            // Get all rows
+            const rows = $('#budgetPrintTable tbody tr').get();
+            const rowsPerPage = 15;
+            const pageCount = Math.ceil(rows.length / rowsPerPage);
+
+            // Create a print section
+            const printSection = $('#printSection');
+            printSection.empty();
+
+            // Add header
+            printSection.append(`
+                <div style="text-align: center; margin-bottom: 20px;">
+                    <h2 style="margin: 0; color: #2c3e50;">كشف الميزانية المطبوعة</h2>
+                    <p style="margin: 5px 0; color: #7f8c8d;">الفترة من ${$('#from').val()} إلى ${$('#to').val()}</p>
+                </div>
+            `);
+
+            // Add total display
+            printSection.append(`
+                <div class="total-display">
+                    إجمالي المبالغ: <span class="total-amount">${formatAmount(totalAmount)}</span>
+                </div>
+            `);
 
     // Process pages
     for (let i = 0; i < pageCount; i++) {
@@ -384,20 +459,20 @@ function printTable() {
 
         pageTable.append(tbody);
 
-        // Add footer with total for the page (amount is in column index 2)
-        const pageTotal = rows.slice(start, end).reduce((sum, row) => {
-            return sum + parseFloat($(row).find('td:eq(2)').text() || 0);
-        }, 0);
+            // Add footer with total for the page (amount is in column index 2)
+            const pageTotal = rows.slice(start, end).reduce((sum, row) => {
+                return sum + parseFloat($(row).find('td:eq(2)').text().replace(/[^\d.-]/g, '') || 0);
+            }, 0);
 
-        pageTable.append(`
-            <tfoot>
-                <tr>
-                    <td colspan="2" style="text-align: left; font-weight: bold;">إجمالي الصفحة</td>
-                    <td style="font-weight: bold;">${pageTotal.toFixed(2)}</td>
-                    <td colspan="2"></td>
-                </tr>
-            </tfoot>
-        `);
+            pageTable.append(`
+                <tfoot>
+                    <tr>
+                        <td colspan="2" style="text-align: left; font-weight: bold;">إجمالي الصفحة</td>
+                        <td style="font-weight: bold;">${formatAmount(pageTotal)}</td>
+                        <td colspan="2"></td>
+                    </tr>
+                </tfoot>
+            `);
 
         // Add to print section
         printSection.append(pageTable);
@@ -408,12 +483,12 @@ function printTable() {
         }
     }
 
-    // Add final total
-    printSection.append(`
-        <div style="margin-top: 20px; text-align: left; font-weight: bold; font-size: 16px;">
-            الإجمالي العام: ${totalAmount.toFixed(2)} جنية
-        </div>
-    `);
+            // Add final total
+            printSection.append(`
+                <div style="margin-top: 20px; text-align: left; font-weight: bold; font-size: 16px;">
+                    الإجمالي العام: ${formatAmount(totalAmount)}
+                </div>
+            `);
 
     // Trigger print
     const printWindow = window.open('', '', 'height=600,width=800');
