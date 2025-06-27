@@ -17,7 +17,9 @@ use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\SequenceController;
 use App\Models\Category;
 use Illuminate\Support\Facades\Route;
-
+use App\Http\Controllers\InvoicePrintController;
+use App\Http\Controllers\MemberPrintController;
+use App\Http\Controllers\BudgetPrintController;
 
 
 
@@ -84,9 +86,18 @@ Route::middleware(['auth:admin,accountant,hr'])->group(function () {
     Route::get('/invoices/get-child-categories', [InvoiceStatisticsController::class, 'getChildCategories'])->name('invoice.getChildCategories');
 
 
-    Route::get('/sequences/member', [SequenceController::class, 'getMemberSequences'])->name('sequences.member');
-    Route::get('/sequences/invoice', [SequenceController::class, 'getInvoiceSequences'])->name('sequences.invoice');
-    Route::get('/sequences/budget', [SequenceController::class, 'getBudgetSequences'])->name('sequences.budget');
+
+    // Route for InvoicePrintController index
+    Route::get('/invoiceprints', [InvoicePrintController::class, 'index'])->name('invoiceprints.index');
+
+
+    // Route for MemberPrintController index
+    Route::get('memberprints', [MemberPrintController::class, 'index'])->name('memberprints.index');
+
+    // Route for BudgetPrintController index
+    Route::get('budgetprints', [BudgetPrintController::class, 'index'])->name('budgetprints.index');
+
+
 
 
 Route::post('/members/upload', [MemberController::class, 'upload'])->name('members.upload');

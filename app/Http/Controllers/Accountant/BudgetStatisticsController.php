@@ -106,10 +106,8 @@ class BudgetStatisticsController extends Controller
 
     public function showStatisticsPage()
     {
-        // Fetch all categories and pass them to the view
-        $categories = Category::whereNull('parent_id')->get(); // Only fetch parent categories
+        $categories = Category::whereNull('parent_id')->get(); 
 
-        // Return view with categories
         return view('accountant.budgets.statistics', compact('categories'));
     }
 }

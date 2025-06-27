@@ -29,8 +29,18 @@ class HomeController extends Controller
 
     public function root(Request $request)
     {
-        $startDate = $request->input('start_date') ?? Carbon::now()->startOfYear()->toDateString();
-        $endDate = $request->input('end_date') ?? Carbon::now()->endOfYear()->toDateString();
+        $today = Carbon::today();
+
+        // Determine fiscal year start (July 1)
+        $fiscalYearStart = $today->month < 7
+            ? Carbon::create($today->year - 1, 7, 1)
+            : Carbon::create($today->year, 7, 1);
+
+        // Fiscal year end is always June 30 of the *next* year
+        $fiscalYearEnd = $fiscalYearStart->copy()->addYear()->subDay();
+
+        $startDate = $request->input('start_date') ?? $fiscalYearStart->toDateString();
+        $endDate = $request->input('end_date') ?? $fiscalYearEnd->toDateString();
 
         $totalRevenues = Budget::whereBetween('created_at', [$startDate, $endDate])->sum('amount');
         $totalExpenses = Invoice::whereBetween('created_at', [$startDate, $endDate])->sum('amount');
@@ -44,6 +54,7 @@ class HomeController extends Controller
             'difference'
         ));
     }
+
 
 
     /* Language Translation */

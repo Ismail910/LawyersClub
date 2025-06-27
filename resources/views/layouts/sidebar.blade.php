@@ -70,11 +70,22 @@
                         <span>@lang('translation.ArchivedInvoices')</span>
                     </a>
                 </li>
+
+                <li>
+                    <a href="javascript:void(0);" class="has-arrow waves-effect">
+                        <i class="bx bx-file"></i>
+                        <span>@lang('translation.Typography')</span>
+                    </a>
+                    <ul class="sub-menu" aria-expanded="false">
+                        <li><a href="{{ route('invoiceprints.index') }}">@lang('translation.AllInvoicePrints')</a></li>
+                        <li><a href="{{ route('memberprints.index') }}">@lang('translation.AllMemberPrints')</a></li>
+                        <li><a href="{{ route('budgetprints.index') }}">@lang('translation.AllBudgetPrints')</a></li>
+                    </ul>
+                </li>
+
                 @endif
 
-                <!-- HR (HR Only) -->
                 @if($user && in_array($user->user_type, ['admin', 'hr','accountant']))
-                <!-- Members Section -->
                 <li>
                     <a href="javascript:void(0);" class="has-arrow waves-effect">
                         <i class="bx bx-user"></i>
@@ -83,11 +94,10 @@
                     <ul class="sub-menu" aria-expanded="false">
                         <li><a href="{{ route('hr.members.index') }}">@lang('translation.AllMembers')</a></li>
                         <li><a href="{{ route('hr.members.create') }}">@lang('translation.AddNewMember')</a></li>
-                        <li><a href="{{ route('sequences.member') }}">@lang('translation.sequences')</a></li>
                     </ul>
                 </li>
 
-             
+
             @endif
 
 

@@ -124,8 +124,23 @@
 <script>
     $(document).ready(function () {
         let today = new Date();
-        let firstDay = new Date(today.getFullYear(), today.getMonth(), 1).toISOString().split('T')[0];
-        let lastDay = new Date(today.getFullYear(), today.getMonth() + 1, 0).toISOString().split('T')[0];
+        let currentYear = today.getFullYear();
+        let currentMonth = today.getMonth(); // 0-based (0 = January, 6 = July)
+
+        // Determine fiscal year start and end dates
+        let fiscalStartYear, fiscalEndYear;
+
+        if (currentMonth >= 6) { // July (6) or later - current fiscal year
+            fiscalStartYear = currentYear;
+            fiscalEndYear = currentYear + 1;
+        } else { // Before July - previous fiscal year
+            fiscalStartYear = currentYear - 1;
+            fiscalEndYear = currentYear;
+        }
+
+        // Set fiscal year dates: July 1st to June 30th
+        let firstDay = new Date(fiscalStartYear, 6, 1).toISOString().split('T')[0]; // July 1st
+        let lastDay = new Date(fiscalEndYear, 5, 30).toISOString().split('T')[0]; // June 30th
 
         $('#from-date').val(firstDay);
         $('#to-date').val(lastDay);
