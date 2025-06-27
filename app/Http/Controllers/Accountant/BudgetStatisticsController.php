@@ -87,8 +87,8 @@ class BudgetStatisticsController extends Controller
                     </form>
                 ';
 
-                // Format the amount to two decimal places
-                $budget->amount = number_format($budget->amount, 2);
+                // Keep amount as numeric value for frontend formatting
+                $budget->amount = (float) $budget->amount;
 
                 return $budget;
             });
@@ -106,7 +106,7 @@ class BudgetStatisticsController extends Controller
 
     public function showStatisticsPage()
     {
-        $categories = Category::whereNull('parent_id')->get(); 
+        $categories = Category::whereNull('parent_id')->get();
 
         return view('accountant.budgets.statistics', compact('categories'));
     }

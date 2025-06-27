@@ -613,4 +613,18 @@ return [
     'Action' => 'الإجراء',
     'Total' => 'الإجمالي',
     'SelectAll' => 'اختيار الكل',
+
+    // Print functionality translations
+    'Print' => 'طباعة',
+    'Print Table' => 'طباعة الجدول',
+    'Filter Information' => 'معلومات التصفية',
+    'Total Records' => 'إجمالي السجلات',
+    'Prepared By' => 'تم الإعداد من قبل',
+    'Approved By' => 'تم الاعتماد من قبل',
+    'Generated on' => 'تم الإنشاء في',
+    'Report' => 'تقرير',
+    'LawyersClub Management System' => 'نظام إدارة نادي المحامين',
+    'ParentCategory' => 'الفئة الرئيسية',
+    'SelectParentCategory' => 'اختر الفئة الرئيسية',
+    'SelectCategory' => 'اختر الفئة',
 ];

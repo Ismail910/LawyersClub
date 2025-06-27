@@ -96,8 +96,8 @@ class InvoiceStatisticsController extends Controller
                 // Format created_at as y-m-d
                 $invoice->created_at = Carbon::parse($invoice->created_at)->format('y-m-d');
 
-                // Format amount with two decimal places
-                $invoice->amount = number_format($invoice->amount, 2);
+                // Keep amount as numeric value for frontend formatting
+                $invoice->amount = (float) $invoice->amount;
 
                 return $invoice;
             });

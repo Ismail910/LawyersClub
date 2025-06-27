@@ -100,7 +100,12 @@
 
     <!-- 🔹 Invoice Records Table -->
     <div class="table-responsive mt-4">
-        <h4>@lang('translation.Invoice Records')</h4>
+        <div class="d-flex justify-content-between align-items-center mb-3">
+            <h4>@lang('translation.Invoice Records')</h4>
+            <button type="button" id="print-table" class="btn btn-success">
+                <i class="fas fa-print me-2"></i>@lang('translation.Print Table')
+            </button>
+        </div>
         <table class="table table-bordered yajra-datatable w-100">
             <thead>
                 <tr>
@@ -126,8 +131,23 @@
 <script>
     $(document).ready(function () {
         let today = new Date();
-        let firstDay = new Date(today.getFullYear(), today.getMonth(), 1).toISOString().split('T')[0];
-        let lastDay = new Date(today.getFullYear(), today.getMonth() + 1, 0).toISOString().split('T')[0];
+        let currentYear = today.getFullYear();
+        let currentMonth = today.getMonth(); // 0-based (0 = January, 6 = July)
+
+        // Determine fiscal year start and end dates
+        let fiscalStartYear, fiscalEndYear;
+
+        if (currentMonth >= 6) { // July (6) or later - current fiscal year
+            fiscalStartYear = currentYear;
+            fiscalEndYear = currentYear + 1;
+        } else { // Before July - previous fiscal year
+            fiscalStartYear = currentYear - 1;
+            fiscalEndYear = currentYear;
+        }
+
+        // Set fiscal year dates: July 1st to June 30th
+        let firstDay = new Date(fiscalStartYear, 6, 1).toISOString().split('T')[0];
+        let lastDay = new Date(fiscalEndYear, 5, 30).toISOString().split('T')[0]; // June 30th
 
         $('#from-date').val(firstDay);
         $('#to-date').val(lastDay);
@@ -160,14 +180,32 @@
                 method: 'GET',
                 data: formData,
                 success: function (response) {
-                    $('#monthly-stats').html(response.monthly.reduce((acc, stat) => acc + stat.total_amount, 0).toLocaleString());
-                    $('#yearly-stats').html(response.yearly.reduce((acc, stat) => acc + stat.total_amount, 0).toLocaleString());
-                    $('#total-amount').html(response.total.toLocaleString());
+                    const monthlyTotal = response.monthly.reduce((acc, stat) => acc + stat.total_amount, 0);
+                    const yearlyTotal = response.yearly.reduce((acc, stat) => acc + stat.total_amount, 0);
 
+                    $('#monthly-stats').html(monthlyTotal.toLocaleString('ar-EG', {
+                        minimumFractionDigits: 2,
+                        maximumFractionDigits: 2
+                    }) + ' ج');
+
+                    $('#yearly-stats').html(yearlyTotal.toLocaleString('ar-EG', {
+                        minimumFractionDigits: 2,
+                        maximumFractionDigits: 2
+                    }) + ' ج');
+
+                    $('#total-amount').html(response.total.toLocaleString('ar-EG', {
+                        minimumFractionDigits: 2,
+                        maximumFractionDigits: 2
+                    }) + ' ج');
+
+                    // Update category-wise statistics
                     $('#category-stats').html(response.categories.map(stat => `
                         <div class="d-flex justify-content-between p-2 border-bottom">
                             <span>${stat.category_name}</span>
-                            <strong>${stat.total_amount.toLocaleString()}</strong>
+                            <strong>${stat.total_amount.toLocaleString('ar-EG', {
+                                minimumFractionDigits: 2,
+                                maximumFractionDigits: 2
+                            })} ج</strong>
                         </div>
                     `).join(''));
 
@@ -179,6 +217,16 @@
         function loadDataTable(data) {
             data.forEach((item, index) => {
                 item.DT_RowIndex = index + 1; // Row index starts at 1
+
+                // Format amount with Arabic currency
+                if (item.amount !== undefined && item.amount !== null) {
+                    item.formatted_amount = parseFloat(item.amount).toLocaleString('ar-EG', {
+                        minimumFractionDigits: 2,
+                        maximumFractionDigits: 2
+                    }) + ' ج';
+                } else {
+                    item.formatted_amount = '0.00 ج';
+                }
 
                 // Format created_at to y-m-d (e.g., 25-03-2025)
                 if (item.created_at) {
@@ -198,7 +246,7 @@
                     {data: 'DT_RowIndex', name: 'DT_RowIndex', orderable: false, searchable: false},
                     {data: 'category_name', name: 'category_name'},
                     {data: 'invoice_number', name: 'invoice_number'},
-                    {data: 'amount', name: 'amount'},
+                    {data: 'formatted_amount', name: 'amount', orderable: false},
                     {data: 'description', name: 'description'},
                     {data: 'created_at', name: 'created_at'}, // Display the formatted created_at
                     {data: 'action', name: 'action', orderable: false, searchable: false},
@@ -217,6 +265,209 @@
             e.preventDefault();
             fetchStatistics($(this).serialize());
         });
+
+        // Print Table Function
+        $('#print-table').on('click', function () {
+            printTable();
+        });
+
+        function printTable() {
+            const table = $('.yajra-datatable').DataTable();
+            const data = table.rows({ search: 'applied' }).data().toArray();
+
+            const parentCategory = $('#parent_category option:selected').text();
+            const category = $('#category_id option:selected').text();
+            const fromDate = $('#from-date').val();
+            const toDate = $('#to-date').val();
+
+            let totalAmount = 0;
+            let rowsHtml = data.map((row, index) => {
+                totalAmount += parseFloat(row.amount) || 0;
+                const formattedAmount = parseFloat(row.amount || 0).toLocaleString('ar-EG', {
+                    minimumFractionDigits: 2,
+                    maximumFractionDigits: 2
+                }) + ' ج';
+                return `
+                    <tr>
+                        <td class=\"text-center\">${index + 1}</td>
+                        <td class=\"text-left\">${row.category_name || ''}</td>
+                        <td class=\"text-center\">${row.invoice_number || ''}</td>
+                        <td class=\"text-right\">${formattedAmount}</td>
+                        <td class=\"text-left\">${row.description || ''}</td>
+                        <td class=\"text-center\">${row.created_at || ''}</td>
+                    </tr>
+                `;
+            }).join('');
+
+            const printContent = `
+                <html>
+                <head>
+                    <title>@lang('translation.Invoice Records') - @lang('translation.Print')</title>
+                    <style>
+                        body {
+                            font-family: 'Segoe UI', 'Tahoma', 'Arial', sans-serif;
+                            margin: 20px;
+                            font-size: 11px;
+                            direction: rtl;
+                            text-align: right;
+                        }
+                        .header {
+                            text-align: center;
+                            border-bottom: 2px solid #007bff;
+                            margin-bottom: 20px;
+                            padding-bottom: 10px;
+                        }
+                        .header img {
+                            height: 50px;
+                            margin-bottom: 5px;
+                        }
+                        h2 {
+                            margin: 5px 0;
+                            color: #007bff;
+                        }
+                        .filter-info {
+                            background: #f1f1f1;
+                            padding: 15px;
+                            border-right: 4px solid #007bff;
+                            margin-bottom: 20px;
+                            border-radius: 5px;
+                        }
+                        .filter-info p {
+                            margin: 5px 0;
+                        }
+                        .filter-info strong {
+                            display: inline-block;
+                            width: 120px;
+                            color: #333;
+                        }
+                        table {
+                            width: 100%;
+                            border-collapse: collapse;
+                            margin-bottom: 20px;
+                            direction: rtl;
+                        }
+                        th, td {
+                            border: 1px solid #ddd;
+                            padding: 8px;
+                            text-align: center;
+                        }
+                        th {
+                            background-color: #007bff;
+                            color: white;
+                            font-weight: bold;
+                            font-size: 10px;
+                        }
+                        .text-right {
+                            text-align: right;
+                        }
+                        .text-center {
+                            text-align: center;
+                        }
+                        .text-left {
+                            text-align: left;
+                        }
+                        tfoot td {
+                            font-weight: bold;
+                            background: #e9ecef;
+                            font-size: 12px;
+                        }
+                        .signatures {
+                            margin-top: 50px;
+                            display: flex;
+                            justify-content: space-between;
+                        }
+                        .signatures div {
+                            width: 45%;
+                            margin-top: 50px;
+                            text-align: center;
+                        }
+                        .footer {
+                            margin-top: 30px;
+                            text-align: center;
+                            font-size: 10px;
+                            color: #666;
+                            border-top: 1px solid #ddd;
+                            padding-top: 10px;
+                        }
+                        @media print {
+                            @page {
+                                size: A4;
+                                margin: 20mm;
+                            }
+                            body {
+                                margin: 0;
+                                font-size: 10px;
+                            }
+                        }
+                    </style>
+                </head>
+                <body>
+                    <div class=\"header\">
+                        <h2>@lang('translation.Invoice Records')</h2>
+                        <p>@lang('translation.Invoice Statistics') - ${new Date().toLocaleDateString('ar-SA')}</p>
+                    </div>
+
+                    <div class=\"filter-info\">
+                        <p><strong>@lang('translation.ParentCategory'):</strong> ${parentCategory}</p>
+                        <p><strong>@lang('translation.Category'):</strong> ${category}</p>
+                        <p><strong>@lang('translation.From Date'):</strong> ${fromDate}</p>
+                        <p><strong>@lang('translation.To Date'):</strong> ${toDate}</p>
+                        <p><strong>@lang('translation.Total Records'):</strong> ${data.length}</p>
+                    </div>
+
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>#</th>
+                                <th>@lang('translation.Category')</th>
+                                <th>@lang('translation.Invoice Number')</th>
+                                <th>@lang('translation.Amount')</th>
+                                <th>@lang('translation.Description')</th>
+                                <th>@lang('translation.CreatedAt')</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            ${rowsHtml}
+                        </tbody>
+                        <tfoot>
+                            <tr>
+                                <td colspan=\"3\" class=\"text-right\"><strong>@lang('translation.Total'):</strong></td>
+                                <td class=\"text-right\"><strong>${totalAmount.toLocaleString('ar-EG', {
+                                    minimumFractionDigits: 2,
+                                    maximumFractionDigits: 2
+                                })} ج</strong></td>
+                                <td colspan=\"2\"></td>
+                            </tr>
+                        </tfoot>
+                    </table>
+
+                    <div class=\"signatures\">
+                        <div>
+                            ___________________________<br />
+                            <strong>@lang('translation.Prepared By')</strong>
+                        </div>
+                        <div>
+                            ___________________________<br />
+                            <strong>@lang('translation.Approved By')</strong>
+                        </div>
+                    </div>
+
+                    <div class=\"footer\">
+                        <p><strong>@lang('translation.Generated on'):</strong> ${new Date().toLocaleString('ar-SA')}</p>
+                        <p>@lang('translation.Invoice Statistics') @lang('translation.Report') | @lang('translation.LawyersClub Management System')</p>
+                    </div>
+                </body>
+                </html>
+            `;
+
+            const printWindow = window.open('', '_blank');
+            printWindow.document.write(printContent);
+            printWindow.document.close();
+            printWindow.onload = function () {
+                printWindow.print();
+                printWindow.close();
+            };
+        }
     });
 </script>
 
